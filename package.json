@@ -1,0 +1,10 @@
+{
+  "name": "curio-cabinet",
+  "private": true,
+  "description": "Curio Cabinet — classic memory pairs in a cabinet of curiosities. Built on gamekit.",
+  "scripts": {
+    "test": "node --test",
+    "icons": "node tools/make-icons.js",
+    "calibrate": "node tools/calibrate.js"
+  }
+}

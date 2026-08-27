@@ -1,0 +1,15 @@
+{
+  "name": "Curio Cabinet",
+  "short_name": "Curio Cabinet",
+  "description": "Classic memory pairs in a cabinet of curiosities — 25 halls, 10 card packs, Time Attack and a two-player game.",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#241a10",
+  "theme_color": "#241a10",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

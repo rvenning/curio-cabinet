@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Curio Cabinet 🗝️ — A Memory Game of Pairs</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#241a10">
+<meta name="description" content="Classic memory pairs, in a cabinet of curiosities. Twenty-five halls across five wings, ten card packs from friendly animals to the whole alphabet, a Time Attack that starts on thirty seconds and grows the board every time you clear it, and a two-player game for one table.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Curio Cabinet">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="lib/gk-base.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗝️</text></svg>">
+</head>
+<body>
+
+<!-- Splash -->
+<div class="screen active" id="screen-splash">
+  <div class="splash-inner">
+    <div class="crest" aria-hidden="true">🗝️</div>
+    <h1 class="logo">CURIO<span>CABINET</span></h1>
+    <p class="tagline">Turn over two drawers. If they match they stay open. It is the oldest game there is, and it is still the hardest one to be good at.</p>
+    <button class="btn big" id="btn-continue-as" style="display:none"></button>
+    <button class="btn big green" id="btn-start" onclick="App.play()">🗝️ Open the Cabinet</button>
+    <button class="btn ghost" onclick="App.howTo()">📖 How to play</button>
+    <button class="btn ghost" id="btn-install" style="display:none">📲 Add to Home Screen</button>
+    <div class="splash-foot">
+      <span id="sync-badge">⏳ connecting…</span>
+      <button class="btn-sound iconbtn">🔊</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile picker (roster + PIN modals are rendered by GK.Profiles) -->
+<div class="screen" id="screen-profiles">
+  <header class="topbar">
+    <button class="iconbtn" onclick="App.showScreen('splash')">←</button>
+    <h2 class="grow">Who's playing?</h2>
+    <button class="btn-sound iconbtn">🔊</button>
+  </header>
+  <div class="content">
+    <div class="profile-list" id="profile-list"></div>
+  </div>
+</div>
+
+<!-- Hall map -->
+<div class="screen" id="screen-map">
+  <header class="topbar sticky">
+    <button class="iconbtn" onclick="App.play()">👥</button>
+    <div class="map-player grow" id="map-player"></div>
+    <span class="map-stat" id="map-stars"></span>
+    <button class="iconbtn" onclick="App.showLeaderboard()">🏆</button>
+  </header>
+  <div class="content">
+    <button class="btn big green wide" id="btn-continue"></button>
+    <div class="row-btns3">
+      <button class="btn blue" id="btn-attack" onclick="App.startAttack()">⏱ Time Attack</button>
+      <button class="btn blue" onclick="App.showDuel()">👥 Two Player</button>
+      <button class="btn blue" onclick="App.showCabinet()">🎨 Cabinet</button>
+    </div>
+    <div id="hall-list"></div>
+  </div>
+</div>
+
+<!-- The board -->
+<div class="screen" id="screen-game">
+  <header class="gamebar">
+    <button class="iconbtn small" onclick="App.pause()" aria-label="Pause">⏸</button>
+    <span class="hud grow" id="hud-title"></span>
+    <span class="hud" id="hud-pairs">🃏 0/0</span>
+    <span class="hud" id="hud-misses">✗ 0</span>
+    <span class="hud time" id="hud-clock">0s</span>
+  </header>
+  <p class="game-sub" id="game-sub"></p>
+  <div class="duel-turn" id="duel-turn" style="display:none"></div>
+  <div class="game-stage" id="game-stage">
+    <canvas id="cv" aria-label="The board of cards"></canvas>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="screen" id="screen-results">
+  <div class="res-inner">
+    <div class="res-emoji" id="res-emoji">🗝️</div>
+    <h2 class="res-title" id="res-title"></h2>
+    <div class="res-stars" id="res-stars"></div>
+    <div class="res-score" id="res-score"></div>
+    <div class="res-stats" id="res-stats"></div>
+    <p class="res-note" id="res-note"></p>
+    <p class="res-finished" id="res-finished" style="display:none">👑 Every drawer in the cabinet, opened. There is nothing left in here you have not seen.</p>
+    <div class="res-actions">
+      <button class="btn grey" onclick="App.showMap()">🗺️ Map</button>
+      <button class="btn" id="res-retry" style="display:none"></button>
+      <button class="btn green" id="res-next" style="display:none"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Two player -->
+<div class="screen" id="screen-duel">
+  <header class="topbar sticky">
+    <button class="iconbtn" onclick="App.showMap()">←</button>
+    <h2 class="grow">👥 Two Player</h2>
+    <button class="btn-sound iconbtn">🔊</button>
+  </header>
+  <div class="content">
+    <p class="nudge">One device, two people, taking turns. Find a pair and you go again — which is how somebody wins four in a row and takes the whole thing. No clock: nobody should be hurried.</p>
+    <label class="field">
+      <span>Who are you playing?</span>
+      <input id="duel-name" type="text" maxlength="12" placeholder="Challenger" autocomplete="off">
+    </label>
+    <div class="size-list" id="duel-list"></div>
+  </div>
+</div>
+
+<!-- Cabinet themes -->
+<div class="screen" id="screen-cabinet">
+  <header class="topbar sticky">
+    <button class="iconbtn" onclick="App.showMap()">←</button>
+    <h2 class="grow">🎨 The Cabinet</h2>
+    <button class="btn-sound iconbtn">🔊</button>
+  </header>
+  <div class="content">
+    <p class="nudge">Stars fit out the cabinet. A theme changes the table, the rim and the backs of the cards, and nothing else — none of them make the game any easier, which is the point of them.</p>
+    <div class="theme-list" id="theme-list"></div>
+  </div>
+</div>
+
+<!-- Leaderboard -->
+<div class="screen" id="screen-leaderboard">
+  <header class="topbar sticky">
+    <button class="iconbtn" onclick="App.showMap()">←</button>
+    <h2 class="grow">🏆 The Family</h2>
+    <button class="btn-sound iconbtn">🔊</button>
+  </header>
+  <div class="content">
+    <p class="nudge">Ranked on Time Attack, because it is the one mode where everybody plays the same way: thirty seconds on the clock, and every pair you find buys a little of it back.</p>
+    <div class="lb-rows" id="lb-rows"></div>
+  </div>
+</div>
+
+<!-- Pause -->
+<div class="modal" id="modal-pause">
+  <div class="modal-box">
+    <h2>⏸ Drawers shut</h2>
+    <p>The clock is stopped.</p>
+    <div class="row-btns2">
+      <button class="btn green" onclick="App.resume()">▶️ Carry on</button>
+      <button class="btn blue" onclick="App.restart()">↻ New deal</button>
+    </div>
+    <button class="btn grey wide" onclick="App.quitGame()">🚪 Leave it</button>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="modal" id="modal-howto">
+  <div class="modal-box howto">
+    <h2>📖 How to play</h2>
+    <p>Every card has exactly one twin somewhere on the board. Turn over two: if they match they stay open, and if they do not, they go back down — but you got to see them, and that is the whole game.</p>
+    <ul class="howto-list">
+      <li><b>Press, slide, lift.</b> Nothing turns over until you take your finger off, so you can slide to the right drawer first.</li>
+      <li><b>A quick look.</b> Every board flashes face-up before the clock starts. It gets shorter as you go deeper, and you will never hold all of it.</li>
+      <li><b>Stars come from misses, not from the clock.</b> The clock only decides whether you finish; how well you finished is how few times you turned two that did not go together.</li>
+      <li><b>⏱ Time Attack</b> starts on thirty seconds. Every pair buys a bit back and clearing a board buys more, then a bigger one is dealt. It ends when the boards outgrow the clock — and that is the score on the family board.</li>
+      <li><b>👥 Two Player</b> is one device between two people. Find a pair and you go again.</li>
+      <li><b>Ten packs</b>, from friendly animals to the whole alphabet. Letters are much harder than pictures, and the last wing knows it.</li>
+    </ul>
+    <button class="btn green wide" onclick="GK.UI.closeModal('modal-howto')">Got it</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- gamekit (vendored from rvenning/gamekit into lib/) -->
+<script src="lib/gk-util.js"></script>
+<script src="lib/gk-audio.js"></script>
+<script src="lib/gk-ui.js"></script>
+<script src="lib/gk-storage.js"></script>
+<script src="lib/gk-profiles.js"></script>
+<script src="lib/gk-pwa.js"></script>
+<script src="lib/gk-fx.js"></script>
+<script src="lib/gk-debug.js"></script>
+<script>
+// Light, slow motes rather than arcade sparks: this is a game played sitting
+// still, and a matched pair should twinkle rather than explode.
+const Fx = GK.Fx.configure({
+  grav: 90, poolCap: 420, shakeMax: 6, shakeDecay: 26, shape: "circle",
+  burstSpeed: 110, burstSize: 2.4, textSize: 15, textDy: -30, textCap: 14,
+  font: "'Baloo 2', system-ui, sans-serif",
+});
+const Tween = GK.Tween;
+</script>
+<script src="js/firebase-config.js"></script>
+<!-- data registries -->
+<script src="js/rng.js"></script>
+<script src="js/packs.js"></script>
+<script src="js/halls.js"></script>
+<!-- systems -->
+<script src="js/storage.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+<script src="js/render.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
