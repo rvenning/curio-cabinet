@@ -17,9 +17,20 @@
 // mis-aimed thumb costs a slide rather than a turn.
 
 // Fitting the board to the stage is right on a phone and absurd on a monitor,
-// where a six-card board would give 200px cards. Past this the board stops
+// where a six-card board would give 300px cards. Past this the board stops
 // growing and the cabinet around it does the filling instead.
-const MAX_CELL = 92;
+//
+// The cap is not a constant, because a constant is what makes the SMALL boards
+// look wrong. On a monitor the eight-row board fits at around 140px a card, so
+// a fixed cap below that leaves a six-card board with cards visibly SMALLER
+// than a forty-eight-card one, marooned in a field of wood. So the cap is
+// whatever the biggest board in the game would get on this screen: every hall
+// deals the same size card, and the board grows with the window instead of
+// stopping at a number picked on one machine. MIN_CAP keeps the short stage of
+// a phone in landscape from shrinking the cards below the old constant.
+const MAX_ROWS = 8;         // the tallest board in halls.js ("Everything", 6x8)
+const MIN_CAP = 92;
+const FELT = 0.24;          // baize border around the board, in cells per side
 const FLIP_TIME = 0.20;     // seconds a card takes to turn over
 const SETTLE_TIME = 0.45;   // seconds a matched pair takes to sit down
 
@@ -64,8 +75,13 @@ const Render = {
   layout() {
     const cols = Game.cols || 4, rows = Game.rows || 4;
     const pad = 16;
-    this.cell = Math.max(14, Math.min(MAX_CELL,
-      Math.floor(Math.min((this.W - pad * 2) / cols, (this.H - pad * 2) / rows))));
+    // The cap counts the felt border, so the biggest board keeps its frame on
+    // screen instead of running it off the top and bottom edges.
+    const cap = Math.max(MIN_CAP, (this.H - pad * 2) / (MAX_ROWS + FELT * 2));
+    // Whole pixels: the cap is a fraction of the stage, and a fractional cell
+    // puts every card on a half pixel and softens the whole board.
+    this.cell = Math.max(14, Math.floor(Math.min(cap,
+      (this.W - pad * 2) / cols, (this.H - pad * 2) / rows)));
     this.bw = this.cell * cols;
     this.bh = this.cell * rows;
     this.ox = Math.round((this.W - this.bw) / 2);
@@ -275,11 +291,15 @@ const Render = {
     ctx.restore();
 
     // The baize the board sits on, with a rim.
-    const m = Math.max(8, this.cell * 0.24);
+    const m = Math.max(8, this.cell * FELT);
     const x = this.ox - m, y = this.oy - m, w = this.bw + m * 2, h = this.bh + m * 2;
-    const r = Math.min(22, m * 1.6);
+    // Both of these used to be flat pixel numbers, which read as a hairline
+    // once the cards grow past the old cap. They are written as ratios that
+    // land on the old numbers at a 92px cell, so nothing moves on a phone.
+    const r = Math.min(m * 1.6, Math.max(22, this.cell * 0.24));
     ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,.42)"; ctx.shadowBlur = 22; ctx.shadowOffsetY = 8;
+    ctx.shadowColor = "rgba(0,0,0,.42)";
+    ctx.shadowBlur = Math.max(22, this.cell * 0.24); ctx.shadowOffsetY = Math.max(8, this.cell * 0.087);
     this.roundRect(ctx, x, y, w, h, r);
     ctx.fillStyle = T.feltEdge; ctx.fill();
     ctx.restore();
@@ -316,8 +336,9 @@ const Render = {
     // Shadow under the card, strongest when it is lying flat and lit.
     ctx.save();
     ctx.shadowColor = "rgba(0,0,0,.5)";
-    ctx.shadowBlur = 6 + lift * 10;
-    ctx.shadowOffsetY = 3 + lift * 4;
+    const sh = Math.max(1, this.cell / 92);   // shadows in card-widths, not pixels
+    ctx.shadowBlur = (6 + lift * 10) * sh;
+    ctx.shadowOffsetY = (3 + lift * 4) * sh;
     this.roundRect(ctx, -w / 2, -h / 2, w, h, rad);
     ctx.fillStyle = "#000"; ctx.fill();
     ctx.restore();
@@ -452,7 +473,7 @@ const Render = {
     const h = HALLS[Game.hallIdx];
     const full = Game.mode === "hall" ? (h ? h.peek : 1) : (Game.mode === "duel" ? 1.4 : ATTACK.peek);
     const frac = Math.max(0, Math.min(1, Game.peekLeft / full));
-    const m = Math.max(8, this.cell * 0.24);
+    const m = Math.max(8, this.cell * FELT);
     const w = this.bw + m * 2, x = this.ox - m, y = this.oy - m - 12;
     ctx.fillStyle = "rgba(0,0,0,.3)";
     this.roundRect(ctx, x, y, w, 6, 3); ctx.fill();
